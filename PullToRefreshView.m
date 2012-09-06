@@ -39,7 +39,11 @@
 @end
 
 @implementation PullToRefreshView
+
 @synthesize delegate, scrollView;
+@synthesize readyText = _readyText;
+@synthesize normalText = _normalText;
+@synthesize loadingText = _loadingText;
 
 - (void)showActivity:(BOOL)shouldShow animated:(BOOL)animated {
     if (shouldShow) [activityView startAnimating];
@@ -65,18 +69,8 @@
         
 		self.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 		self.backgroundColor = [UIColor colorWithRed:226.0/255.0 green:231.0/255.0 blue:237.0/255.0 alpha:1.0];
-        
-		lastUpdatedLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, frame.size.height - 30.0f, self.frame.size.width, 20.0f)];
-		lastUpdatedLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-		lastUpdatedLabel.font = [UIFont systemFontOfSize:12.0f];
-		lastUpdatedLabel.textColor = TEXT_COLOR;
-		lastUpdatedLabel.shadowColor = [UIColor colorWithWhite:0.9f alpha:1.0f];
-		lastUpdatedLabel.shadowOffset = CGSizeMake(0.0f, 1.0f);
-		lastUpdatedLabel.backgroundColor = [UIColor clearColor];
-		lastUpdatedLabel.textAlignment = UITextAlignmentCenter;
-		[self addSubview:lastUpdatedLabel];
-        
-		statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, frame.size.height - 48.0f, self.frame.size.width, 20.0f)];
+
+		statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.0f, frame.size.height - 42.0f, self.frame.size.width, 20.0f)];
 		statusLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 		statusLabel.font = [UIFont boldSystemFontOfSize:13.0f];
 		statusLabel.textColor = TEXT_COLOR;
@@ -102,7 +96,10 @@
         activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
 		activityView.frame = CGRectMake(10.0f, frame.size.height - 38.0f, 20.0f, 20.0f);
 		[self addSubview:activityView];
-        
+
+        _readyText = @"Release to refresh...";
+        _normalText = @"Pull down to refresh...";
+        _loadingText = @"Loading...";
 		[self setState:PullToRefreshViewStateNormal];
     }
     
@@ -112,17 +109,22 @@
 #pragma mark -
 #pragma mark Setters
 
-- (void)refreshLastUpdatedDate {
-    NSDate *date = [NSDate date];
-    
-	if ([delegate respondsToSelector:@selector(pullToRefreshViewLastUpdated:)])
-		date = [delegate pullToRefreshViewLastUpdated:self];
-    
-    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    [formatter setAMSymbol:@"AM"];
-    [formatter setPMSymbol:@"PM"];
-    [formatter setDateFormat:@"MM/dd/yy hh:mm a"];
-    lastUpdatedLabel.text = [NSString stringWithFormat:@"Last Updated: %@", [formatter stringFromDate:date]];
+- (void)setReadyText:(NSString*)readyText
+{
+    _readyText = readyText;
+    [self setState:state];
+}
+
+- (void)setNormalText:(NSString*)normalText
+{
+    _normalText = normalText;
+    [self setState:state];
+}
+
+- (void)setLoadingText:(NSString*)loadingText
+{
+    _loadingText = loadingText;
+    [self setState:state];
 }
 
 - (void)setState:(PullToRefreshViewState)state_ {
@@ -130,22 +132,21 @@
     
 	switch (state) {
 		case PullToRefreshViewStateReady:
-			statusLabel.text = @"Release to refresh...";
+			statusLabel.text = _readyText;
 			[self showActivity:NO animated:NO];
             [self setImageFlipped:YES];
             scrollView.contentInset = UIEdgeInsetsZero;
 			break;
             
 		case PullToRefreshViewStateNormal:
-			statusLabel.text = @"Pull down to refresh...";
+			statusLabel.text = _normalText;
 			[self showActivity:NO animated:NO];
             [self setImageFlipped:NO];
-			[self refreshLastUpdatedDate];
             scrollView.contentInset = UIEdgeInsetsZero;
 			break;
             
 		case PullToRefreshViewStateLoading:
-			statusLabel.text = @"Loading...";
+			statusLabel.text = _loadingText;
 			[self showActivity:YES animated:YES];
             [self setImageFlipped:NO];
             scrollView.contentInset = UIEdgeInsetsMake(60.0f, 0.0f, 0.0f, 0.0f);
